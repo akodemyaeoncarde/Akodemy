@@ -1,14 +1,23 @@
+<<<<<<< HEAD
 import { X, Check, ArrowRight, ArrowLeft, RotateCcw, Play, Clock, Hash } from 'lucide-react'
+=======
+import { X, Check, ArrowRight, ArrowLeft } from 'lucide-react'
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
 
 export default function ResultsOverlay({ 
   isOpen, 
   challenge, 
   testResults, 
+<<<<<<< HEAD
   timeTaken,
   runCount,
   attemptNumber,
   onBackToChallenges, 
   onRetry,
+=======
+  timeTaken, 
+  onBackToChallenges, 
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
   onNextChallenge 
 }) {
   if (!isOpen) return null
@@ -87,6 +96,7 @@ export default function ResultsOverlay({
             </div>
           </div>
 
+<<<<<<< HEAD
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="bg-gray-900 rounded-lg p-3 text-center">
               <Hash className="w-4 h-4 text-gray-400 mx-auto mb-1" />
@@ -113,6 +123,24 @@ export default function ResultsOverlay({
                 {allPassed ? 'Passed' : 'Failed'}
               </p>
               <p className="text-xs text-gray-400">Status</p>
+=======
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-gray-900 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Check className="w-4 h-4 text-gray-400" />
+              </div>
+              <p className="text-xl font-bold text-white">{passedTests}/{totalTests}</p>
+              <p className="text-xs text-gray-400">Tests Passed</p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-xl font-bold text-white">{formatTime(timeTaken)}</p>
+              <p className="text-xs text-gray-400">Time Taken</p>
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
             </div>
           </div>
         </div>
@@ -172,6 +200,7 @@ export default function ResultsOverlay({
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <button
             onClick={onBackToChallenges}
@@ -193,6 +222,22 @@ export default function ResultsOverlay({
           >
             <span className="text-xs sm:text-base">Next</span>
             <ArrowRight className="w-4 h-4" />
+=======
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={onBackToChallenges}
+            className="flex items-center justify-center gap-2 bg-gray-800 text-white px-4 py-3 rounded-lg font-medium hover:bg-gray-700 transition border border-gray-700"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm sm:text-base">Back to Challenges</span>
+          </button>
+          <button
+            onClick={onNextChallenge}
+            className="flex items-center justify-center gap-2 bg-akodemy-purple text-white px-4 py-3 rounded-lg font-medium hover:bg-purple-700 transition"
+          >
+            <ArrowRight className="w-4 h-4" />
+            <span className="text-sm sm:text-base">Next Challenge</span>
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
           </button>
         </div>
       </div>

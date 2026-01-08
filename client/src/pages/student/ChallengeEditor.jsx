@@ -5,8 +5,11 @@ import api from '../../services/api'
 import { Play, ChevronLeft, ChevronDown, ChevronUp, Eye, History, ShieldAlert } from 'lucide-react'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import ResultsOverlay from '../../components/ResultsOverlay'
+<<<<<<< HEAD
 import LatestSubmissionModal from '../../components/LatestSubmissionModal'
 import HistoryPanel from '../../components/HistoryPanel'
+=======
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
 
 export default function ChallengeEditor() {
   const navigate = useNavigate()
@@ -27,12 +30,15 @@ export default function ChallengeEditor() {
   const [showResults, setShowResults] = useState(false)
   const [finalTestResults, setFinalTestResults] = useState([])
   const [finalTime, setFinalTime] = useState(0)
+<<<<<<< HEAD
   const [showLatestModal, setShowLatestModal] = useState(false)
   const [latestSubmission, setLatestSubmission] = useState(null)
   const [showHistory, setShowHistory] = useState(false)
   const [startedAt] = useState(new Date())
   const [attemptNumber, setAttemptNumber] = useState(1)
   const [clipboardToast, setClipboardToast] = useState(false)
+=======
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
   const timerRef = useRef(null)
   const containerRef = useRef(null)
   const editorRef = useRef(null)
@@ -152,6 +158,7 @@ export default function ChallengeEditor() {
       setFinalTime(time)
       
       let testsForOverlay = []
+<<<<<<< HEAD
       let isCorrect = false
       let score = 0
 
@@ -171,6 +178,13 @@ export default function ChallengeEditor() {
         startedAt: startedAt.toISOString()
       })
 
+=======
+      if (testResults) {
+        testsForOverlay = [{ passed: testResults.passed, expected: testResults.expected, actual: testResults.actual }]
+      }
+      setFinalTestResults(testsForOverlay)
+      
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
       await api.post(`/api/progress/save`, {
         challengeId,
         code,
@@ -234,12 +248,15 @@ export default function ChallengeEditor() {
     } catch (error) {
       navigate(`/challenges/${challenge?.language}/${challenge?.difficulty}`)
     }
+<<<<<<< HEAD
   }
 
   const handleRetry = () => {
     navigate(`/challenges/${challenge?.language}/${challenge?.difficulty}`, {
       state: { retryChallengeId: challengeId }
     })
+=======
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
   }
 
   const runCode = async () => {
@@ -566,6 +583,7 @@ export default function ChallengeEditor() {
         challenge={challenge}
         testResults={finalTestResults}
         timeTaken={finalTime}
+<<<<<<< HEAD
         runCount={runCount}
         attemptNumber={attemptNumber}
         onBackToChallenges={handleBackToChallenges}
@@ -587,6 +605,11 @@ export default function ChallengeEditor() {
           </div>
         </div>
       )}
+=======
+        onBackToChallenges={handleBackToChallenges}
+        onNextChallenge={handleNextChallenge}
+      />
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
     </>
   )
 }

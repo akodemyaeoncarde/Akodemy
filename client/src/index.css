@@ -14,6 +14,7 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+<<<<<<< HEAD
 
 @keyframes fade-in {
   from {
@@ -29,3 +30,5 @@ body {
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
+=======
+>>>>>>> 5dfdda8c692a2ebcc1cd78391d4139ad6a82ec42
