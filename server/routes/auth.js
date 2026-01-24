@@ -2,6 +2,7 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import User from '../models/User.js'
 import { authenticateToken } from '../middleware/auth.js'
 import { sendOtpEmail, generateOtp } from '../services/emailService.js'
@@ -9,6 +10,10 @@ import { sendOtpEmail, generateOtp } from '../services/emailService.js'
 // Route handlers for Auth APIs.
 const router = express.Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'akodemy-secret-key-2025'
+const SSO_SHARED_SECRET = process.env.SSO_SHARED_SECRET
+const SSO_ISSUER = process.env.SSO_ISSUER || 'ccis-portal'
+const SSO_AUDIENCE = process.env.SSO_AUDIENCE || 'akodemy'
+const SSO_CLOCK_SKEW_SECONDS = Number.parseInt(process.env.SSO_CLOCK_SKEW_SECONDS || '300', 10)
 
 function validatePassword(password) {
   const errors = []
@@ -32,6 +37,59 @@ function getPasswordStrength(password) {
   if (score <= 2) return 'weak'
   if (score <= 4) return 'medium'
   return 'strong'
+}
+
+function normalizeBcryptHash(hash) {
+  if (!hash) return hash
+  if (hash.startsWith('$2y$')) {
+    return `$2a$${hash.slice(4)}`
+  }
+  return hash
+}
+
+function mapPortalRole(role) {
+  if (role === 'faculty') return 'faculty'
+  return 'student'
+}
+
+function buildSyncUpdate(payload) {
+  const update = {}
+  if (payload.name) update.name = payload.name
+  if (payload.email) update.email = payload.email
+  if (payload.phone) update.phone = payload.phone
+  if (payload.address) update.address = payload.address
+  if (payload.birthdate) update.birthdate = payload.birthdate
+  if (payload.sex) update.sex = payload.sex
+  if (payload.portalUserId) update.portalUserId = payload.portalUserId
+  if (payload.portalUsername) update.portalUsername = payload.portalUsername
+  if (payload.portalRole) update.portalRole = payload.portalRole
+  if (payload.role) update.role = mapPortalRole(payload.role)
+  return update
+}
+
+function verifySyncSecret(req) {
+  if (!SSO_SHARED_SECRET) return false
+  const signature = req.headers['x-sso-signature']
+  const timestamp = req.headers['x-sso-timestamp']
+  if (!signature || !timestamp) return false
+
+  const timestampNumber = Number.parseInt(timestamp, 10)
+  if (!Number.isFinite(timestampNumber)) return false
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  if (Math.abs(nowSeconds - timestampNumber) > SSO_CLOCK_SKEW_SECONDS) {
+    return false
+  }
+
+  const body = JSON.stringify(req.body || {})
+  const expected = crypto
+    .createHmac('sha256', SSO_SHARED_SECRET)
+    .update(`${timestamp}.${body}`)
+    .digest('hex')
+
+  const expectedBuffer = Buffer.from(expected, 'hex')
+  const signatureBuffer = Buffer.from(signature, 'hex')
+  if (expectedBuffer.length !== signatureBuffer.length) return false
+  return crypto.timingSafeEqual(expectedBuffer, signatureBuffer)
 }
 
 router.post('/register', async (req, res) => {
@@ -79,14 +137,24 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body
+    const { email, password, username } = req.body
+    const identifier = (email || username || '').trim()
 
-    const user = await User.findOne({ email })
+    if (!identifier) {
+      return res.status(400).json({ message: 'Email or username is required' })
+    }
+
+    let user = await User.findOne({ email: identifier })
+    if (!user) {
+      user = await User.findOne({ portalUsername: identifier })
+    }
+
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' })
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password)
+    const normalizedHash = normalizeBcryptHash(user.password)
+    const isValidPassword = await bcrypt.compare(password, normalizedHash)
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid email or password' })
     }
@@ -124,6 +192,138 @@ router.put('/profile', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Profile update error:', error)
     res.status(500).json({ message: 'Failed to update profile' })
+  }
+})
+
+router.post('/portal-sync', async (req, res) => {
+  try {
+    if (!SSO_SHARED_SECRET) {
+      return res.status(500).json({ message: 'SSO secret not configured' })
+    }
+
+    if (!verifySyncSecret(req)) {
+      return res.status(401).json({ message: 'Invalid sync signature' })
+    }
+
+    const {
+      portalUserId,
+      portalUsername,
+      portalRole,
+      email,
+      name,
+      role,
+      passwordHash,
+      phone,
+      address,
+      birthdate,
+      sex
+    } = req.body || {}
+
+    if (!email || !passwordHash) {
+      return res.status(400).json({ message: 'Email and password hash are required' })
+    }
+
+    const query = []
+    if (portalUserId) query.push({ portalUserId })
+    if (email) query.push({ email })
+
+    const update = buildSyncUpdate({
+      portalUserId,
+      portalUsername,
+      portalRole,
+      email,
+      name,
+      role,
+      phone,
+      address,
+      birthdate,
+      sex
+    })
+
+    update.password = passwordHash
+    update.passwordSource = 'ccis'
+    update.lastSyncedAt = new Date()
+
+    const user = await User.findOneAndUpdate(
+      query.length > 0 ? { $or: query } : { email },
+      { $set: update, $setOnInsert: { email } },
+      { new: true, upsert: true }
+    )
+
+    res.json({ success: true, userId: user._id })
+  } catch (error) {
+    console.error('Portal sync error:', error)
+    res.status(500).json({ message: 'Failed to sync user' })
+  }
+})
+
+router.post('/sso', async (req, res) => {
+  try {
+    if (!SSO_SHARED_SECRET) {
+      return res.status(500).json({ message: 'SSO secret not configured' })
+    }
+
+    const { token } = req.body
+    if (!token) {
+      return res.status(400).json({ message: 'SSO token is required' })
+    }
+
+    let payload
+    try {
+      payload = jwt.verify(token, SSO_SHARED_SECRET, {
+        issuer: SSO_ISSUER,
+        audience: SSO_AUDIENCE,
+        clockTolerance: SSO_CLOCK_SKEW_SECONDS
+      })
+    } catch (error) {
+      return res.status(401).json({ message: 'Invalid or expired SSO token' })
+    }
+
+    const update = buildSyncUpdate({
+      name: payload.name,
+      email: payload.email,
+      role: payload.role,
+      portalUserId: payload.portalUserId,
+      portalUsername: payload.portalUsername,
+      portalRole: payload.portalRole,
+      phone: payload.phone,
+      address: payload.address,
+      birthdate: payload.birthdate,
+      sex: payload.sex
+    })
+
+    if (!update.email) {
+      return res.status(400).json({ message: 'Email is required in SSO payload' })
+    }
+
+    const query = []
+    if (update.portalUserId) query.push({ portalUserId: update.portalUserId })
+    if (update.email) query.push({ email: update.email })
+
+    let user = await User.findOne(query.length > 0 ? { $or: query } : { email: update.email })
+
+    if (user) {
+      Object.assign(user, update)
+      user.lastSyncedAt = update.portalUserId ? new Date() : user.lastSyncedAt
+      await user.save()
+    } else {
+      const tempPassword = crypto.randomBytes(18).toString('hex')
+      const hashedPassword = await bcrypt.hash(tempPassword, 10)
+      user = await User.create({
+        ...update,
+        password: hashedPassword,
+        passwordSource: 'sso-temp'
+      })
+    }
+
+    const sessionToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' })
+    const userData = user.toObject()
+    delete userData.password
+
+    res.json({ token: sessionToken, user: userData })
+  } catch (error) {
+    console.error('SSO login error:', error)
+    res.status(500).json({ message: 'SSO login failed' })
   }
 })
 

@@ -394,14 +394,14 @@ export default function Login() {
             {mode === 'login' && (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-gray-300 mb-2 text-sm font-medium">Email</label>
+                  <label className="block text-gray-300 mb-2 text-sm font-medium">Email or Username</label>
                   <input
                     ref={emailRef}
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); clearLoginError(); }}
                     className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-akodemy-purple focus:border-transparent transition ${loginError ? 'border-red-500' : 'border-gray-700'}`}
-                    placeholder="Enter your email"
+                    placeholder="Enter your email or username"
                     required
                   />
                 </div>

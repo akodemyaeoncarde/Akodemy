@@ -12,9 +12,26 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  portalUserId: {
+    type: String,
+    default: null
+  },
+  portalUsername: {
+    type: String,
+    default: null
+  },
+  portalRole: {
+    type: String,
+    default: null
+  },
   password: {
     type: String,
     required: true
+  },
+  passwordSource: {
+    type: String,
+    enum: ['akodemy', 'ccis', 'sso-temp'],
+    default: 'akodemy'
   },
   previousPassword: {
     type: String,
@@ -52,8 +69,15 @@ const userSchema = new mongoose.Schema({
     javascript: { type: Number, default: 0 },
     python: { type: Number, default: 0 },
     java: { type: Number, default: 0 }
+  },
+  lastSyncedAt: {
+    type: Date,
+    default: null
   }
 }, { timestamps: true })
+
+userSchema.index({ portalUserId: 1 }, { unique: true, sparse: true })
+userSchema.index({ portalUsername: 1 }, { sparse: true })
 
 export default mongoose.model('User', userSchema)
 

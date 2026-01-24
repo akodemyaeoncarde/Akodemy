@@ -234,7 +234,7 @@ export default function StudentList() {
                     <td className="px-4 py-4 text-center">
                       <button
                         onClick={() => navigate(`/faculty/student/${student._id}`)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-akodemy-purple/20 text-akodemy-purple rounded-lg hover:bg-akodemy-purple/30 transition text-sm"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-akodemy-purple/20 text-white rounded-lg hover:bg-akodemy-purple/30 transition text-sm"
                       >
                         <Eye className="w-4 h-4" />
                         View
@@ -306,7 +306,7 @@ export default function StudentList() {
                       <td className="px-3 py-3 text-center">
                         <button
                           onClick={() => navigate(`/faculty/student/${student._id}`)}
-                          className="p-2 bg-akodemy-purple/20 text-akodemy-purple rounded-lg hover:bg-akodemy-purple/30 transition"
+                          className="p-2 bg-akodemy-purple/20 text-white rounded-lg hover:bg-akodemy-purple/30 transition"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
